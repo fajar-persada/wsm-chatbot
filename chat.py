@@ -20,6 +20,7 @@ class chat_responder:
     def get_response(self, message):
 
         # PREPROCESS user message
+        message = message.lower()
         message_pro = remove_punctuations(message)
         message_pro = questions_tokenization(message_pro)
         message_pro = remove_stopwords(message_pro)
