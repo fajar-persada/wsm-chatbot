@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 def select_keywords(question):
     return [word for word in question if word in keyword_list]
 
-
 df = pd.read_csv("questions_v3.csv", header = None)
 
 df = df[0].str.lower()
@@ -21,6 +20,7 @@ removed_stopwords_data = tokenized_data.apply(remove_stopwords)
 
 stemmed_data = removed_stopwords_data.apply(stemming_word)
 
+# extract keywords
 df_cv = [' '.join(sentence) for sentence in stemmed_data]
 count_vectorizer = CountVectorizer(min_df=0.005, stop_words=sastrawi_stopwords)
 word_count_vector = count_vectorizer.fit_transform(df_cv)
@@ -53,25 +53,26 @@ num_of_question = len(full_processed_data)
 
 keyword_dict = dict.fromkeys(keyword_dict, 0)
 keyword_relative_weight = dict.fromkeys(keyword_dict, 0)
-relative_weight_index = dict.fromkeys(keyword_relative_weight, [0] * num_of_question)
 
 for keyword in keyword_list:
     for question in full_processed_data:
         if keyword in question:
             keyword_dict[keyword] += 1
 
-print(keyword_dict)
-
 # apply idf to questions
 for keyword, frequency in keyword_dict.items():
-    for i in range(5):
-        keyword_relative_weight[keyword] = np.log10(num_of_question / frequency)
-        if keyword in full_processed_data[i]:
-            relative_weight_index[keyword][i] = np.log10(num_of_question / frequency)
-    
+    keyword_relative_weight[keyword] = np.log10(num_of_question / frequency)
 
-v_relative_weight_index = pd.DataFrame.from_dict(relative_weight_index)
-v_relative_weight_index.to_csv("./visual/relative_weight_index.csv")
+# visualize relative weight
+relative_weight_index = np.zeros(shape=(len(keyword_list), num_of_question))
+for key, row in zip(keyword_list, range(len(keyword_list))):
+    for col in range(num_of_question):
+        if keyword_list[row] in full_processed_data[col]:
+            relative_weight_index[row][col] = keyword_relative_weight[key]
+
+relative_weight_index = np.transpose(np.around(relative_weight_index, 3))
+index_result = pd.DataFrame(np.around(relative_weight_index, 3), columns=keyword_list).transpose()
+index_result.to_csv('./visual/relative_weight_index.csv')
 
 
 # APPLY WEIGHTED-SUM MODEL FOR EACH QUESTION
